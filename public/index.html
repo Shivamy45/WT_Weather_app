@@ -1,98 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Weather App</title>
-    <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-    <main class="container">
-        <h1 class="app-title">Weather</h1>
-        <form id="weather-form" class="search" autocomplete="off">
-            <div class="input-wrapper">
-                <input id="city-input" type="text" name="city" placeholder="Enter city name" aria-label="City name" required>
-                <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="City suggestions"></div>
-            </div>
-            <button id="get-weather" type="submit">Get Weather</button>
-        </form>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Weather App</title>
+		<link rel="stylesheet" href="./style.css" />
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="brand">
+				<span class="logo">WT</span>
+				<h1 class="app-title">Weather</h1>
 
-        <section id="weather-card" class="card hidden" aria-live="polite">
-            <div class="card-header">
-                <h2 id="city-name" class="city">—</h2>
-                <img id="weather-icon" class="icon" alt="" src="" hidden>
-            </div>
-            <div class="card-body">
-                <div class="temperature"><span id="temperature">—</span>°C</div>
-                <div id="description" class="description">—</div>
-            </div>
-        </section>
+				<nav class="nav">
+					<form
+						id="weather-form"
+						class="search header-search"
+						autocomplete="off">
+						<div class="input-wrapper">
+							<input
+								id="city-input"
+								type="text"
+								name="city"
+								placeholder="Search city..."
+								aria-label="City name"
+								required />
+							<div
+								id="suggestions"
+								class="suggestions hidden"
+								role="listbox"
+								aria-label="City suggestions"></div>
+						</div>
+						<button id="get-weather" type="submit">Get</button>
+					</form>
+					<label class="theme-toggle">
+						<input
+							id="theme-toggle"
+							type="checkbox"
+							aria-label="Toggle dark mode" />
+						<span>Dark</span>
+					</label>
+				</nav>
+			</div>
+		</header>
 
-        <p id="message" class="message" role="status"></p>
+		<main class="container">
+			<section id="weather-card" class="card hidden" aria-live="polite">
+				<div class="card-header">
+					<div class="title-group">
+						<h2 id="city-name" class="city">—</h2>
+						<span id="country" class="country"></span>
+					</div>
+					<img id="weather-icon" class="icon" alt="" src="" hidden />
+				</div>
+				<div class="card-body">
+					<div class="temp-row">
+						<div class="temperature">
+							<span id="temperature">—</span>°C
+						</div>
+						<div class="feels">
+							Feels like <span id="feels-like">—</span>°C
+						</div>
+					</div>
+					<div id="description" class="description">—</div>
+					<div class="grid two">
+						<div>Min: <strong id="temp-min">—</strong>°C</div>
+						<div>Max: <strong id="temp-max">—</strong>°C</div>
+					</div>
+					<div class="grid three">
+						<div>Humidity: <strong id="humidity">—</strong>%</div>
+						<div>Wind: <strong id="wind">—</strong> m/s</div>
+						<div>
+							Pressure: <strong id="pressure">—</strong> hPa
+						</div>
+					</div>
+					<div class="grid three">
+						<div>
+							Visibility: <strong id="visibility">—</strong> m
+						</div>
+						<div>Sunrise: <strong id="sunrise">—</strong></div>
+						<div>Sunset: <strong id="sunset">—</strong></div>
+					</div>
+					<div class="coords">Coords: <span id="coords">—</span></div>
+					<div class="updated hidden">
+						Updated: <span id="updated">—</span>
+					</div>
+				</div>
+			</section>
 
-        <section id="auth-section" class="panel">
-            <h3>Account</h3>
-            <div id="auth-status" class="auth-status">Not logged in</div>
-            <form id="login-form" class="auth-forms" autocomplete="off">
-                <input type="email" id="login-email" placeholder="Email" required>
-                <input type="password" id="login-password" placeholder="Password" required>
-                <button type="submit">Login</button>
-            </form>
-            <form id="register-form" class="auth-forms" autocomplete="off">
-                <input type="email" id="register-email" placeholder="Email" required>
-                <input type="password" id="register-password" placeholder="Password" required>
-                <button type="submit">Register</button>
-            </form>
-            <button id="logout-btn" class="secondary" hidden>Logout</button>
-        </section>
+			<p id="message" class="message" role="status"></p>
 
-        <section id="favorites-section" class="panel" hidden>
-            <div class="panel-header">
-                <h3>Favorites</h3>
-                <button id="add-favorite" class="secondary">Add current city</button>
-            </div>
-            <div id="favorites-list" class="chip-list"></div>
-        </section>
+			<section id="auth-section" class="panel">
+				<h3>Account</h3>
+				<div id="auth-status" class="auth-status">Not logged in</div>
+				<div class="auth-actions">
+					<button id="open-login" class="secondary">
+						Open Login
+					</button>
+					<button id="open-register" class="secondary">
+						Open Register
+					</button>
+					<button id="logout-btn" class="secondary" hidden>
+						Logout
+					</button>
+				</div>
+			</section>
 
-        <section id="history-section" class="panel" hidden>
-            <h3>Recent Searches</h3>
-            <ul id="history-list" class="list"></ul>
-        </section>
+			<section id="favorites-section" class="panel" hidden>
+				<div class="panel-header">
+					<h3>Favorites</h3>
+					<button id="add-favorite" class="secondary">
+						Add current city
+					</button>
+				</div>
+				<div id="favorites-list" class="chip-list"></div>
+			</section>
 
-        <section id="trending-section" class="panel">
-            <h3>Top 10 searched cities today</h3>
-            <ol id="trending-list" class="list"></ol>
-        </section>
+			<section id="history-section" class="panel" hidden>
+				<h3>Recent Searches</h3>
+				<ul id="history-list" class="list"></ul>
+			</section>
 
-        <section id="subs-section" class="panel" hidden>
-            <div class="panel-header">
-                <h3>Subscriptions</h3>
-                <button id="add-subscription" class="secondary">Subscribe current city</button>
-            </div>
-            <div id="subs-list" class="chip-list"></div>
-        </section>
+			<section id="trending-section" class="panel">
+				<h3>Top 10 searched cities today</h3>
+				<ol id="trending-list" class="list"></ol>
+			</section>
 
-        <section id="admin-section" class="panel" hidden>
-            <h3>Analytics (Admin)</h3>
-            <div class="grid">
-                <div>
-                    <h4>Top Cities (7 days)</h4>
-                    <ol id="analytics-top" class="list"></ol>
-                </div>
-                <div>
-                    <h4>Searches per hour (24h)</h4>
-                    <ul id="analytics-hour" class="list"></ul>
-                </div>
-                <div>
-                    <h4>Avg temperature today</h4>
-                    <div id="analytics-avgtemp" class="stat">—</div>
-                </div>
-            </div>
-        </section>
-    </main>
+			<section id="subs-section" class="panel" hidden>
+				<div class="panel-header">
+					<h3>Subscriptions</h3>
+					<button id="add-subscription" class="secondary">
+						Subscribe current city
+					</button>
+				</div>
+				<div id="subs-list" class="chip-list"></div>
+			</section>
 
-    <script src="./script.js" defer></script>
-    <noscript>Please enable JavaScript to use this app.</noscript>
-</body>
+			<section id="admin-section" class="panel" hidden>
+				<h3>Analytics (Admin)</h3>
+				<div class="grid">
+					<div class="chart-card">
+						<h4>Top Cities (7 days)</h4>
+						<canvas id="chart-top" height="200"></canvas>
+					</div>
+					<div class="chart-card">
+						<h4>Searches per hour (24h)</h4>
+						<canvas id="chart-hour" height="200"></canvas>
+					</div>
+					<div class="chart-card">
+						<h4>Favorites Distribution</h4>
+						<canvas id="chart-fav" height="200"></canvas>
+					</div>
+				</div>
+				<div class="stat-row">
+					Avg temperature today:
+					<span id="analytics-avgtemp" class="stat">—</span>
+				</div>
+			</section>
+		</main>
+
+		<!-- Login Modal -->
+		<div
+			id="login-modal"
+			class="modal hidden"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="login-title">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 id="login-title">Login</h3>
+					<button class="modal-close" data-close="login-modal">
+						✕
+					</button>
+				</div>
+				<form id="login-form" class="form" autocomplete="off">
+					<label
+						>Email<input type="email" id="login-email" required
+					/></label>
+					<label
+						>Password<input
+							type="password"
+							id="login-password"
+							required
+					/></label>
+					<button type="submit" class="primary">Login</button>
+					<p class="form-message" id="login-message"></p>
+				</form>
+			</div>
+		</div>
+
+		<!-- Register Modal -->
+		<div
+			id="register-modal"
+			class="modal hidden"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="register-title">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 id="register-title">Register</h3>
+					<button class="modal-close" data-close="register-modal">
+						✕
+					</button>
+				</div>
+				<form id="register-form" class="form" autocomplete="off">
+					<label
+						>Email<input type="email" id="register-email" required
+					/></label>
+					<label
+						>Password<input
+							type="password"
+							id="register-password"
+							required
+					/></label>
+					<label
+						>Confirm Password<input
+							type="password"
+							id="register-password2"
+							required
+					/></label>
+					<button type="submit" class="primary">
+						Create Account
+					</button>
+					<p class="form-message" id="register-message"></p>
+				</form>
+			</div>
+		</div>
+
+		<footer class="site-footer">
+			<p>© <span id="year"></span> WT Weather. All rights reserved.</p>
+		</footer>
+
+		<div id="toast-container"></div>
+
+		<!-- Chart.js CDN -->
+		<script
+			src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+			integrity="sha384-3xVfXyG2vkG2r6e1U2mQ3m0n+0yT1r3yZcW0o9H0t7i7u2h8R6PzYQJqf0d1Y+5j"
+			crossorigin="anonymous"></script>
+
+		<script src="./script.js" defer></script>
+		<noscript>Please enable JavaScript to use this app.</noscript>
+	</body>
 </html>
-

@@ -346,6 +346,7 @@ try { get_pdo(); $pdoAvailable = true; } catch (Throwable $e) { $pdoAvailable = 
 
 // Check cache
 $cached = null;
+$cacheTs = null;
 if ($pdoAvailable) {
     try {
         $pdo = get_pdo();
@@ -356,6 +357,7 @@ if ($pdoAvailable) {
             $age = time() - (int)$row['ts'];
             if ($age <= 15 * 60) { // 15 minutes
                 $cached = json_decode($row['data_json'], true);
+                $cacheTs = (int)$row['ts'];
             }
         }
     } catch (Throwable $e) { /* ignore */ }
@@ -388,6 +390,7 @@ if (isset($decoded['cod']) && (string)$decoded['cod'] !== '200') {
 }
 
     $cached = $decoded;
+    $cacheTs = time();
 
     if ($pdoAvailable) {
         try {
@@ -410,15 +413,34 @@ if ($pdoAvailable) {
 }
 
 $cityName = isset($cached['name']) ? $cached['name'] : $city;
-$temp = isset($cached['main']['temp']) ? $cached['main']['temp'] : null;
-$description = isset($cached['weather'][0]['description']) ? $cached['weather'][0]['description'] : '';
-$icon = isset($cached['weather'][0]['icon']) ? $cached['weather'][0]['icon'] : '';
+$sysCountry = isset($cached['sys']['country']) ? $cached['sys']['country'] : '';
+$coordLat = isset($cached['coord']['lat']) ? $cached['coord']['lat'] : null;
+$coordLon = isset($cached['coord']['lon']) ? $cached['coord']['lon'] : null;
+$main = isset($cached['main']) && is_array($cached['main']) ? $cached['main'] : [];
+$wind = isset($cached['wind']) && is_array($cached['wind']) ? $cached['wind'] : [];
+$weather0 = isset($cached['weather'][0]) && is_array($cached['weather'][0]) ? $cached['weather'][0] : [];
+$sys = isset($cached['sys']) && is_array($cached['sys']) ? $cached['sys'] : [];
 
-echo json_encode([
+$response = [
     'city' => $cityName,
-    'temperature' => $temp,
-    'description' => $description,
-    'icon' => $icon,
-], JSON_UNESCAPED_UNICODE);
+    'country' => $sysCountry,
+    'temperature' => $main['temp'] ?? null,
+    'temp_min' => $main['temp_min'] ?? null,
+    'temp_max' => $main['temp_max'] ?? null,
+    'feels_like' => $main['feels_like'] ?? null,
+    'description' => $weather0['description'] ?? '',
+    'icon' => $weather0['icon'] ?? '',
+    'humidity' => $main['humidity'] ?? null,
+    'pressure' => $main['pressure'] ?? null,
+    'visibility' => $cached['visibility'] ?? null,
+    'wind_speed' => $wind['speed'] ?? null,
+    'wind_deg' => $wind['deg'] ?? null,
+    'sunrise' => $sys['sunrise'] ?? null,
+    'sunset' => $sys['sunset'] ?? null,
+    'coord' => [ 'lat' => $coordLat, 'lon' => $coordLon ],
+];
+if ($cacheTs !== null) { $response['last_updated'] = $cacheTs; }
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
 

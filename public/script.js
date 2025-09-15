@@ -4,9 +4,22 @@
   const message = document.getElementById('message');
   const card = document.getElementById('weather-card');
   const cityEl = document.getElementById('city-name');
+  const countryEl = document.getElementById('country');
   const tempEl = document.getElementById('temperature');
   const descEl = document.getElementById('description');
   const iconEl = document.getElementById('weather-icon');
+  const feelsEl = document.getElementById('feels-like');
+  const minEl = document.getElementById('temp-min');
+  const maxEl = document.getElementById('temp-max');
+  const humidityEl = document.getElementById('humidity');
+  const windEl = document.getElementById('wind');
+  const pressureEl = document.getElementById('pressure');
+  const visibilityEl = document.getElementById('visibility');
+  const sunriseEl = document.getElementById('sunrise');
+  const sunsetEl = document.getElementById('sunset');
+  const coordsEl = document.getElementById('coords');
+  const updatedRow = document.querySelector('.updated');
+  const updatedEl = document.getElementById('updated');
   const suggestionsEl = document.getElementById('suggestions');
   // Auth & extras
   const authStatus = document.getElementById('auth-status');
@@ -26,6 +39,11 @@
   const analyticsTop = document.getElementById('analytics-top');
   const analyticsHour = document.getElementById('analytics-hour');
   const analyticsAvgTemp = document.getElementById('analytics-avgtemp');
+  // Modals & nav
+  const loginModal = document.getElementById('login-modal');
+  const registerModal = document.getElementById('register-modal');
+  const openLoginBtn = document.getElementById('open-login');
+  const openRegisterBtn = document.getElementById('open-register');
 
   function setMessage(text, isError = false) {
     message.textContent = text || '';
@@ -38,10 +56,27 @@
       setMessage(data?.error || 'Could not fetch weather.');
       return;
     }
-    const { city, temperature, description, icon } = data;
+    const { city, country, temperature, description, icon, feels_like, temp_min, temp_max, humidity, wind_speed, pressure, visibility, sunrise, sunset, coord, last_updated } = data;
     cityEl.textContent = city || 'Unknown';
+    countryEl.textContent = country ? `(${country})` : '';
     tempEl.textContent = typeof temperature === 'number' ? Math.round(temperature) : '—';
     descEl.textContent = description || '—';
+    feelsEl.textContent = typeof feels_like === 'number' ? Math.round(feels_like) : '—';
+    minEl.textContent = typeof temp_min === 'number' ? Math.round(temp_min) : '—';
+    maxEl.textContent = typeof temp_max === 'number' ? Math.round(temp_max) : '—';
+    humidityEl.textContent = humidity ?? '—';
+    windEl.textContent = typeof wind_speed === 'number' ? wind_speed.toFixed(1) : '—';
+    pressureEl.textContent = pressure ?? '—';
+    visibilityEl.textContent = visibility ?? '—';
+    sunriseEl.textContent = sunrise ? new Date(sunrise * 1000).toLocaleTimeString() : '—';
+    sunsetEl.textContent = sunset ? new Date(sunset * 1000).toLocaleTimeString() : '—';
+    coordsEl.textContent = (coord && typeof coord.lat === 'number' && typeof coord.lon === 'number') ? `${coord.lat.toFixed(2)}, ${coord.lon.toFixed(2)}` : '—';
+    if (last_updated) {
+      updatedRow?.classList.remove('hidden');
+      updatedEl.textContent = new Date(last_updated * 1000).toLocaleString();
+    } else {
+      updatedRow?.classList.add('hidden');
+    }
 
     if (icon) {
       iconEl.src = `https://openweathermap.org/img/wn/${icon}@2x.png`;
@@ -62,6 +97,7 @@
 
     try {
       setMessage('Loading...');
+      document.body.classList.add('loading');
       const response = await fetch(`${endpoint}?${params.toString()}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
@@ -75,6 +111,9 @@
       setMessage('');
     } catch (err) {
       renderWeather({ error: err?.message || 'Network error' });
+    }
+    finally {
+      document.body.classList.remove('loading');
     }
   }
 
@@ -218,20 +257,36 @@
     }
   }
 
+  function showToast(text, kind = 'success') {
+    const box = document.getElementById('toast-container');
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = `toast ${kind}`;
+    div.textContent = text;
+    box.appendChild(div);
+    setTimeout(() => { div.remove(); }, 3000);
+  }
+
   loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    try { await apiPost({ mode: 'login', email, password }); await refreshMe(); }
-    catch (err) { setMessage('Login failed', true); }
+    const msg = document.getElementById('login-message');
+    msg.textContent = '';
+    try { await apiPost({ mode: 'login', email, password }); await refreshMe(); closeModal('login-modal'); showToast('Logged in successfully', 'success'); }
+    catch (err) { msg.textContent = 'Login failed'; showToast('Login failed', 'error'); }
   });
 
   registerForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('register-email').value;
     const password = document.getElementById('register-password').value;
-    try { await apiPost({ mode: 'register', email, password }); await refreshMe(); }
-    catch (err) { setMessage('Registration failed', true); }
+    const password2 = document.getElementById('register-password2').value;
+    const msg = document.getElementById('register-message');
+    msg.textContent = '';
+    if (password !== password2) { msg.textContent = 'Passwords do not match.'; return; }
+    try { await apiPost({ mode: 'register', email, password }); await refreshMe(); closeModal('register-modal'); showToast('Registered successfully', 'success'); openModal('login-modal'); document.getElementById('login-email').value = email; }
+    catch (err) { msg.textContent = 'Registration failed'; showToast('Registration failed', 'error'); }
   });
 
   logoutBtn?.addEventListener('click', async () => {
@@ -275,8 +330,7 @@
       historyList.innerHTML = '';
       items.forEach((row) => {
         const li = document.createElement('li');
-        const ts = new Date(row.searched_at?.replace(' ', 'T'));
-        li.textContent = `${row.city} — ${isNaN(ts) ? row.searched_at : ts.toLocaleString()}`;
+        li.textContent = row.city;
         li.addEventListener('click', () => fetchWeather(row.city));
         historyList.appendChild(li);
       });
@@ -329,25 +383,89 @@
   async function loadAnalytics() {
     try {
       const data = await apiGet({ mode: 'analytics' });
-      analyticsTop.innerHTML = '';
-      data.topCities.forEach((row) => {
-        const li = document.createElement('li');
-        li.textContent = `${row.city} (${row.cnt})`;
-        analyticsTop.appendChild(li);
-      });
-      analyticsHour.innerHTML = '';
-      data.perHour.forEach((row) => {
-        const li = document.createElement('li');
-        const date = new Date(row.hour.replace(' ', 'T'));
-        li.textContent = `${isNaN(date) ? row.hour : date.toLocaleString()} — ${row.cnt}`;
-        analyticsHour.appendChild(li);
-      });
       analyticsAvgTemp.textContent = (data.avgTemp ?? '—').toString();
+      // Charts
+      const ctxTop = document.getElementById('chart-top')?.getContext('2d');
+      const ctxHour = document.getElementById('chart-hour')?.getContext('2d');
+      const ctxFav = document.getElementById('chart-fav')?.getContext('2d');
+      if (ctxTop && window.Chart) {
+        const labels = data.topCities.map(r => r.city);
+        const values = data.topCities.map(r => Number(r.cnt));
+        if (window._chartTop) window._chartTop.destroy();
+        window._chartTop = new Chart(ctxTop, {
+          type: 'bar',
+          data: { labels, datasets: [{ label: 'Top Cities', data: values, backgroundColor: 'rgba(79,172,254,0.6)', borderColor: 'rgba(79,172,254,1)', borderWidth: 1 }] },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } }, y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } } } }
+        });
+      }
+      if (ctxHour && window.Chart) {
+        const labels = data.perHour.map(r => r.hour);
+        const values = data.perHour.map(r => Number(r.cnt));
+        if (window._chartHour) window._chartHour.destroy();
+        window._chartHour = new Chart(ctxHour, {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Searches', data: values, borderColor: 'rgba(0,242,254,1)', backgroundColor: 'rgba(0,242,254,0.2)', tension: 0.3 }] },
+          options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } }, y: { ticks: { color: getComputedStyle(document.documentElement).getPropertyValue('--text') } } } }
+        });
+      }
+      if (ctxFav && window.Chart) {
+        // For demo, use topCities as proxy for favorites distribution unless a dedicated endpoint is added
+        const labels = data.topCities.map(r => r.city);
+        const values = data.topCities.map(r => Number(r.cnt));
+        if (window._chartFav) window._chartFav.destroy();
+        window._chartFav = new Chart(ctxFav, {
+          type: 'pie',
+          data: { labels, datasets: [{ data: values, backgroundColor: labels.map((_, i) => `hsl(${(i*36)%360} 90% 60% / 0.9)`)}] },
+          options: { responsive: true }
+        });
+      }
     } catch (_) {}
   }
 
   // Initial loads
   refreshMe();
   loadTrending();
+
+  // Simple page routing
+  const navHome = document.getElementById('nav-home');
+  const navLogin = document.getElementById('nav-login');
+  const navRegister = document.getElementById('nav-register');
+  const navLogout = document.getElementById('nav-logout');
+  function setActive(btn) {
+    [navHome, navLogin, navRegister].forEach(b => b?.classList.remove('active'));
+    btn?.classList.add('active');
+  }
+  navHome?.addEventListener('click', () => setActive(navHome));
+  navLogin?.addEventListener('click', () => setActive(navLogin));
+  navRegister?.addEventListener('click', () => setActive(navRegister));
+  // Logout button mirrors backend logout already wired
+
+  // Dark mode toggle
+  const themeToggle = document.getElementById('theme-toggle');
+  function applyTheme(mode) {
+    const dark = mode === 'dark';
+    document.documentElement.classList.toggle('light', !dark);
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initial = savedTheme || (prefersDark ? 'dark' : 'light');
+  themeToggle.checked = initial === 'dark';
+  applyTheme(initial);
+  themeToggle?.addEventListener('change', (e) => applyTheme(e.target.checked ? 'dark' : 'light'));
+
+  // Modals
+  function openModal(id) { const m = document.getElementById(id); if (m) m.classList.remove('hidden'); }
+  function closeModal(id) { const m = document.getElementById(id); if (m) m.classList.add('hidden'); }
+  openLoginBtn?.addEventListener('click', () => openModal('login-modal'));
+  openRegisterBtn?.addEventListener('click', () => openModal('register-modal'));
+  document.querySelectorAll('.modal-close')?.forEach(btn => btn.addEventListener('click', (e) => {
+    const id = e.currentTarget.getAttribute('data-close');
+    if (id) closeModal(id);
+  }));
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeModal('login-modal'); closeModal('register-modal'); } });
+
+  // Footer year
+  document.getElementById('year').textContent = String(new Date().getFullYear());
 })();
 

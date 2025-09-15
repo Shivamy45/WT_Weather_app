@@ -1,2 +1,19 @@
-/.env
-/node_modules
+# Ignore environment files
+.env
+
+# Ignore node_modules if you have JS packages
+node_modules/
+
+# Ignore PHPStorm / VSCode settings
+.idea/
+.vscode/
+
+# Ignore OS files
+.DS_Store
+
+# Ignore logs / temp files
+*.log
+*.tmp
+
+# Ignore composer vendor (if you have PHP dependencies)
+vendor/
