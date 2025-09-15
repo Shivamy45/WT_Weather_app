@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Weather App</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <main class="container">
+        <h1 class="app-title">Weather</h1>
+        <form id="weather-form" class="search" autocomplete="off">
+            <div class="input-wrapper">
+                <input id="city-input" type="text" name="city" placeholder="Enter city name" aria-label="City name" required>
+                <div id="suggestions" class="suggestions hidden" role="listbox" aria-label="City suggestions"></div>
+            </div>
+            <button id="get-weather" type="submit">Get Weather</button>
+        </form>
+
+        <section id="weather-card" class="card hidden" aria-live="polite">
+            <div class="card-header">
+                <h2 id="city-name" class="city">—</h2>
+                <img id="weather-icon" class="icon" alt="" src="" hidden>
+            </div>
+            <div class="card-body">
+                <div class="temperature"><span id="temperature">—</span>°C</div>
+                <div id="description" class="description">—</div>
+            </div>
+        </section>
+
+        <p id="message" class="message" role="status"></p>
+
+        <section id="auth-section" class="panel">
+            <h3>Account</h3>
+            <div id="auth-status" class="auth-status">Not logged in</div>
+            <form id="login-form" class="auth-forms" autocomplete="off">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <form id="register-form" class="auth-forms" autocomplete="off">
+                <input type="email" id="register-email" placeholder="Email" required>
+                <input type="password" id="register-password" placeholder="Password" required>
+                <button type="submit">Register</button>
+            </form>
+            <button id="logout-btn" class="secondary" hidden>Logout</button>
+        </section>
+
+        <section id="favorites-section" class="panel" hidden>
+            <div class="panel-header">
+                <h3>Favorites</h3>
+                <button id="add-favorite" class="secondary">Add current city</button>
+            </div>
+            <div id="favorites-list" class="chip-list"></div>
+        </section>
+
+        <section id="history-section" class="panel" hidden>
+            <h3>Recent Searches</h3>
+            <ul id="history-list" class="list"></ul>
+        </section>
+
+        <section id="trending-section" class="panel">
+            <h3>Top 10 searched cities today</h3>
+            <ol id="trending-list" class="list"></ol>
+        </section>
+
+        <section id="subs-section" class="panel" hidden>
+            <div class="panel-header">
+                <h3>Subscriptions</h3>
+                <button id="add-subscription" class="secondary">Subscribe current city</button>
+            </div>
+            <div id="subs-list" class="chip-list"></div>
+        </section>
+
+        <section id="admin-section" class="panel" hidden>
+            <h3>Analytics (Admin)</h3>
+            <div class="grid">
+                <div>
+                    <h4>Top Cities (7 days)</h4>
+                    <ol id="analytics-top" class="list"></ol>
+                </div>
+                <div>
+                    <h4>Searches per hour (24h)</h4>
+                    <ul id="analytics-hour" class="list"></ul>
+                </div>
+                <div>
+                    <h4>Avg temperature today</h4>
+                    <div id="analytics-avgtemp" class="stat">—</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="./script.js" defer></script>
+    <noscript>Please enable JavaScript to use this app.</noscript>
+</body>
+</html>
+
